@@ -1,0 +1,7 @@
+% list number of interfaces below
+1
+% list all boundary IDs below in one array
+9
+% list number of datapoints for all those boundaries in same order below
+1
+0.5 0.5 0 0
