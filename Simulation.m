@@ -18,21 +18,23 @@ progress = fopen([TestCaseFolder '/Progress' num2str(labindex) '.txt'], 'w');
 % This object only contains raw data supplied as input to the simulation.
 % Here we will add data checks later
 
-% File names to be imported 
-File_mat1 = [ TestCaseFolder '/mat_data.txt']; % contains material data
-File_mat2 = [ TestCaseFolder '/mat_data2.txt'];
-File_bnd = [ TestCaseFolder '/Boundary.txt']; % Only file for all the boundaries
-File_bnd_prop = [ TestCaseFolder '/Boundary_prop.txt']; % Properties of all the boundaries
-File_measure_reg = [ TestCaseFolder '/Measure_regions.txt']; % Regions where output is calculated
-File_thermal_grad = [ TestCaseFolder '/Thermal_gradient.txt']; % Thermal gradient source
-File_measure_time = [ TestCaseFolder '/Measure_times.txt']; % Measurement times for transient simulation
-File_param = [ TestCaseFolder '/Sim_param.txt']; % Other simulation paramters
-File_init1 = [ TestCaseFolder '/Initial_conditions1.txt'];   % in mat1
-File_init2 = [ TestCaseFolder '/Initial_conditions2.txt'];   % in mat2
-File_interface = [TestCaseFolder '/Interface_data.txt'];  % interface properties
-File_peri_pair = [TestCaseFolder '/PeriBnd_pairs.txt']; % periodic bounday pair
-
 if labindex == 1
+    % File names to be imported 
+    File_mat1 = [ TestCaseFolder '/mat_data.txt']; % contains material data
+    File_mat2 = [ TestCaseFolder '/mat_data2.txt'];
+    File_bnd = [ TestCaseFolder '/Boundary.txt']; % Only file for all the boundaries
+    File_bnd_prop = [ TestCaseFolder '/Boundary_prop.txt']; % Properties of all the boundaries
+    File_measure_reg = [ TestCaseFolder '/Measure_regions.txt']; % Regions where output is calculated
+    File_thermal_grad = [ TestCaseFolder '/Thermal_gradient.txt']; % Thermal gradient source
+    File_measure_time = [ TestCaseFolder '/Measure_times.txt']; % Measurement times for transient simulation
+    File_param = [ TestCaseFolder '/Sim_param.txt']; % Other simulation paramters
+    File_init1 = [ TestCaseFolder '/Initial_conditions1.txt'];   % in mat1
+    File_init2 = [ TestCaseFolder '/Initial_conditions2.txt'];   % in mat2
+    File_interface = [TestCaseFolder '/Interface_data.txt'];  % interface properties
+    File_peri_pair = [TestCaseFolder '/PeriBnd_pairs.txt']; % periodic bounday pair
+
+    fprintf(outputMessages,['Read all files successfully \n']);
+
     rawDataObject = InputData(File_mat1,File_mat2,File_bnd,File_bnd_prop,...
         File_measure_reg,File_thermal_grad,File_measure_time,File_param,...
         File_init1,File_init2,File_interface,File_peri_pair);
@@ -71,7 +73,9 @@ if labindex == 1
     DetectObject = Detector(simParamObject,rawDataObject.measureReg,rawDataObject.measureTime,materialInfoObj.matProp);
     
 end
+
 %% Step 7 Send data to all the workers
+fprintf(outputMessages,['Sending data to all workers.\n']);  
 
 if labindex == 1
     objectOfObjects = {rawDataObject;simParamObject;materialInfoObj;...
@@ -80,6 +84,10 @@ if labindex == 1
 else
     objectOfObjects = labBroadcast(1);
 end
+
+labBarrier;
+
+fprintf(outputMessages,['Sent all data.\n']);  
 
 % extracting data for all the objects
 rawDataObject = objectOfObjects{1};
