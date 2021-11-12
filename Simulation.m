@@ -30,11 +30,12 @@ File_param = [ TestCaseFolder '/Sim_param.txt']; % Other simulation paramters
 File_init1 = [ TestCaseFolder '/Initial_conditions1.txt'];   % in mat1
 File_init2 = [ TestCaseFolder '/Initial_conditions2.txt'];   % in mat2
 File_interface = [TestCaseFolder '/Interface_data.txt'];  % interface properties
+File_peri_pair = [TestCaseFolder '/PeriBnd_pairs.txt']; % periodic bounday pair
 
 if labindex == 1
     rawDataObject = InputData(File_mat1,File_mat2,File_bnd,File_bnd_prop,...
         File_measure_reg,File_thermal_grad,File_measure_time,File_param,...
-        File_init1,File_init2,File_interface);
+        File_init1,File_init2,File_interface,File_peri_pair);
     
     
     %% Step 2 Setup Sim object
@@ -55,7 +56,8 @@ if labindex == 1
     % interacts with geometry are stored in this object
     geometryObject = Geometry(rawDataObject,materialInfoObj);
     
-    
+%     % draw geometry
+%     geometryObject.Draw();
     %% Step 5 create Source object
     % This object keeps track of all the sources and the related information.
     % Deviational energies, cumulative deviational energy etc. It will also
@@ -108,6 +110,7 @@ for ii=labindex:numlabs:simParamObject.N
     if(mod(ii*1000,simParamObject.N)==0)
         fprintf(progress,'Current %f %% \n', ii*100/simParamObject.N);
         disp(num2str(ii*100/simParamObject.N));
+        %disp(num2str(geometryObject.Inter(1).fluxAcross))
     end
     
     part = sourceObject.Emit(simParamObject.N);
@@ -144,7 +147,7 @@ for ii=labindex:numlabs:simParamObject.N
         
         if(isBndScatter)
             % boundary scattering
-            part = part.Geo_scatter(geometryObject,bndID,materialInfoObj.matProp);
+            [part, geometryObject]= part.Geo_scatter(geometryObject,bndID,materialInfoObj.matProp);
         else
             if(abs(part.tNext-part.tNext3ph)<2*eps)
                 % 3 phonon scattering
@@ -175,8 +178,17 @@ end
 
 
 %% Step 9 Setup data to be written to the disk
-DetectObject.Write_output(TestCaseFolder,outputIdentifier);
+success = DetectObject.Write_output(TestCaseFolder,outputIdentifier);
+if(~success)
+    fprintf(outputMessages,'There is problem in writting detector records \n');
+end
 
+for ii=1:geometryObject.numInter
+   success = geometryObject.Inter(ii).Write_flux(TestCaseFolder, outputIdentifier);
+   if(~success)
+       fprintf(outputMessages,['Problem writting flux info for bounday ID' num2str(geometryObject.Inter(ii).bndID)]);
+   end
+end
 
 fclose(progress);
 fclose(outputMessages);

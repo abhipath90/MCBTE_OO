@@ -194,6 +194,7 @@ classdef Region
                 len = tmax;
                 return;
             else
+                disp(['start ' num2str(Start) 'end ' num2str(End)])
                 error('Error while calculating flight-Region interaction.');
             end
         end

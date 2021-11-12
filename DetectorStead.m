@@ -33,7 +33,10 @@ classdef DetectorStead < Region
             len = obj.Len_inside(Parti.startPoint,Parti.endPoint);
             
             if(Parti.matID ~= obj.material && abs(len-0)>2*eps)
-                error('Material ID of detector and particle do not match');
+                partProps = ['Material = ' num2str(Parti.matID) '\nStarting = ' num2str((Parti.startPoint)') ...
+                    '\nEnding = ' num2str((Parti.endPoint)') '\nvelocity = ' num2str((Parti.vel)') ' and \n omega = ' ...
+                    num2str(Parti.omega) '\n'];
+                error(['Material ID of detector and particle do not match\nParticle properties:' partProps]);
             end
             if(len>0)
                 speed = vecnorm(Parti.vel,2,1);
@@ -46,4 +49,3 @@ classdef DetectorStead < Region
         end
     end
 end
-

@@ -20,6 +20,13 @@ classdef Particle
         tNextImp    % time to next impurity scattering
         isAlive     % Boolean to check if the particle is alive
         relaxCount % Number of relaxation events since birth
+        
+        % Don't expect more than 10000
+        % scattering events. May need to find better way to initialize it
+        % based on max_scatter value
+        %trajAll = zeros(10000,6)      % contains starting and ending points of all the flights
+        scattHist = zeros(10000,3)    % contains scattering history scatt type, if bnd bndID
+        % 1 = relaxation; 2 = impurity, 3 = bnd
     end
     
     methods
@@ -96,6 +103,13 @@ classdef Particle
         
         %% Scattering function
         function obj = Relax_scatter(obj,matProp)
+            % recording values for debug before scattering
+            % finding where to record, only need first column to check
+            % indexScat = find(~obj.scattHist(:,1) && ~obj.scattHist(:,2),1);
+            indexScat = find(~obj.scattHist(:,1),1);
+            obj.scattHist(indexScat,:) = [1,0,obj.matID];
+            %obj.trajAll(indexScat,:) = [obj.startPoint' obj.endPoint'];
+            
             % 3 phonon scattering implemented here
             obj.mode = Utils.Select_mode(matProp.cumulColl,matProp.Nmodes);
             obj.omega = matProp.freq(obj.mode);
@@ -108,6 +122,12 @@ classdef Particle
         end
         
         function obj = Imp_scatter(obj,matProp)
+            % recording values for debug before scattering
+            % finding where to record
+            indexScat = find(~obj.scattHist(:,1) ,1);
+            obj.scattHist(indexScat,:) = [2,0,obj.matID];
+            %obj.trajAll(indexScat,:) = [obj.startPoint' obj.endPoint'];
+            
             % 2 phonon/ impurity scattering is implemented
             obj.vel = vecnorm(obj.vel,2,1)*Utils.Draw_random('sphere');
             obj.startPoint = obj.endPoint;
@@ -115,7 +135,15 @@ classdef Particle
             obj.tNextImp = obj.tNext - matProp.tauImp(obj.mode)*log(1-rand());
         end
         
-        function obj = Geo_scatter(obj,GeoObj,bndID,matAllProp)
+        function [obj, GeoObj] = Geo_scatter(obj,GeoObj,bndID,matAllProp)
+            % whenever flux is recorded across interface, Interface object
+            % changes, that changes Geometry object too.
+            % recording values for debug before scattering
+            % finding where to record
+            indexScat = find(~obj.scattHist(:,1) ,1);
+            obj.scattHist(indexScat,:) = [3,bndID,obj.matID];
+            %obj.trajAll(indexScat,:) = [obj.startPoint' obj.endPoint'];
+            
             for ii=1:GeoObj.numBnd
                 if(ii<=GeoObj.numIso)
                     % checking interaction with isothermal walls
@@ -144,7 +172,10 @@ classdef Particle
                 else
                     subtract = GeoObj.numIso + GeoObj.numAdi + GeoObj.numPeri;
                     if(GeoObj.Inter(ii-subtract).bndID == bndID)
-                        obj = GeoObj.Inter(ii-subtract).Scatter(obj,matAllProp);
+                        [obj, updatedInterface] = GeoObj.Inter(ii-subtract).Scatter(obj,matAllProp);
+                        GeoObj.Inter(ii-subtract) = updatedInterface;
+                        % now geometry object is updated. So need to return
+                        % that.
                         obj.t0 = obj.tNext;
                         return;
                     end

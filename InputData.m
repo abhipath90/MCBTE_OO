@@ -13,11 +13,12 @@ classdef InputData
         param           % Vector of simulations parameters
         init            % A cell array of all the initial conditions
         interface       % cell array of all the interfacial conditions
+        periPair        % array containing all periodic boundary pairs
     end
     
     methods
         function obj = InputData(mat1,mat2,bndFile,propFile,regionFile,...
-                gradFile,timeFile,paramFile,init1,init2,File_interface)
+                gradFile,timeFile,paramFile,init1,init2,File_interface,File_peri_pair)
             % This is to store the data coming from all the files
             
             obj.matData{1,1} = load(mat1);
@@ -30,27 +31,42 @@ classdef InputData
             obj.param = load(paramFile);
             obj.init{1,1} = load(init1);
             obj.init{2,1} = load(init2);
+            obj.periPair = load(File_peri_pair);
             
             % getting interface conditions
+            [dataDir, ~, ~] = fileparts(File_interface);
             fid = fopen(File_interface);
             tline = fgetl(fid); % first line discard
-            numInter = str2num(fgetl(fid));
+            numInter = str2num(fgetl(fid));  % stores number of interfaces in the simulation
             if(numInter==0)
                 obj.interface = {numInter};
             else         
                 tline = fgetl(fid); %discard this one too
-                interBndID = str2num(fgetl(fid));
-                tline = fgetl(fid);% discarding again
-                interDataNum = str2num(fgetl(fid));
-                % get new fid
+                interBndID = str2num(fgetl(fid));  % stores boundary ids of all the interface
+                % next 4 lines are comments
+                for disCount=1:4
+                    tline = fgetl(fid);% discarding comment lines
+                end
+                interDefFiles = [];
+                for interCount = 1:numInter
+                    interDefFiles{interCount} =  split(fgetl(fid),',');
+                end
                 fclose(fid);
-                %fid = fopen(File_interface);
-                %interData = cell2mat(textscan(fid,'%f %f %f %f','HeaderLines',6));
-                interData = readmatrix(File_interface,'NumHeaderLines',6,'Delimiter',',');
-                obj.interface = {numInter; interBndID;interDataNum;interData};
+                % Need to read all the interDefFiles here only and collect
+                % data in the memory
+                InterDefData = [];
+                for interCount = 1:numInter
+                    numFiles = length(interDefFiles{interCount});
+                    for fileCount = 1:numFiles
+                        InterDefData{interCount}{fileCount} = regexp(fileread([dataDir '/' strtrim(interDefFiles{interCount}{fileCount})]), '\r\n|\r|\n', 'split');
+                        % strtrim removes leading whitespaces from an
+                        % string
+                    end
+                end
+                obj.interface = {numInter; interBndID; InterDefData};
             end
         end
-        
+      
         
     end
 end

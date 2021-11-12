@@ -2,6 +2,8 @@
 1
 % list all boundary IDs below in one array
 9
-% list number of datapoints for all those boundaries in same order below
-1
-0.5 0.5 0 0
+% Sequentially list file names that contain appropriate data for above listed boundaries in same order. One line for each boundary
+% For elastic boundary only one file containing T12, T21, S12, S21 as columns is needed
+% For inelastic boundary additionally 8 files containing transmission and reflection chracterisitcs are needed
+% TransProbs12, TransIndices12, RefProbs12, RefIndices12, TransProbs21, TransIndices21, RefProbs21, RefIndices21 all listed as comma seperated txt filenames
+Trans_spec_bnd_9.txt, TransProbsGeSi.txt, TransIndicesGeSi.txt, RefProbsGeSi.txt, RefIndicesGeSi.txt, TransProbsSiGe.txt, TransIndicesSiGe.txt, RefProbsSiGe.txt, RefIndicesSiGe.txt

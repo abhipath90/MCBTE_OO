@@ -42,6 +42,7 @@ classdef GradSrc
             part = Particle();  % default constructor: all nulls
             part.pSign = sign(rand()-0.5); % equal probability of each sign
             part.matID = obj.matObj.matID;
+
             part.mode = Utils.Select_mode(obj.matObj.cumulVel,obj.matObj.Nmodes);
             part.omega = obj.matObj.freq(part.mode);
                         

@@ -81,6 +81,19 @@ for mm=1:length(FF_list)
         
         writematrix(mat_bnd_prop,'Boundary_prop.txt');
         
+        
+        %% Periodic boundary pairs
+        % list periodic bounday pairs. For each periodic boundary list its
+        % conjugate ID. Leave blank if there is not periodic boundary
+        mat_peri_pair = [1 3;
+                         2 4;
+                         3 1;
+                         4 2;
+                         6 7;
+                         7 6;
+                         10 11;
+                         11 10];
+       writematrix(mat_peri_pair, 'PeriBnd_pairs.txt');
         %% Measure_regions.txt
         % Detectors also contain information about the material and no
         % refinement information

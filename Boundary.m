@@ -8,7 +8,7 @@ classdef Boundary
     
     properties
         bndID
-        matID
+        matID    % material ID towards the normal direction
         vertex1 (3,1) double {mustBeNonNan}
         vertex2 (3,1) double {mustBeNonNan}
         vertex3 (3,1) double {mustBeNonNan}
@@ -61,8 +61,16 @@ classdef Boundary
             % calculates interaction between boundary and particle
             % Interface boundary has another function that overrides this
             % one
+            % PeriBnd also overrides this
             fraction = -1; ID = obj.bndID; point=[NaN;NaN;NaN];
-                        
+            indexScat = find(~part.scattHist(:,1) ,1);
+            if(indexScat ~=1) % not the first scattering
+                % check if the particle just scattered from this boundary
+                if(part.scattHist(indexScat-1,2) == ID)
+                    % just scattered from this boundary, ignore
+                    return;
+                end
+            end
             A = part.startPoint;
             B = part.endPoint;
             
@@ -75,9 +83,20 @@ classdef Boundary
                 % segment is parallel to the boundary
                 return;
             else
+                % check if the point A lies on the boundary being checked
+                % for. Sometimes if the flight is too short, a repeated
+                % interaction can be detected
+                %********** NEED A BETTER CHECK***********************
+                checkVec = obj.vertex1 - A;
+                checkVec = checkVec/norm(checkVec); % for proper scaling, unit vector
+                if(abs(dot(obj.normal,checkVec))< 1e-5)
+                    return;
+                end
+                
                 t = dot(obj.normal,obj.vertex1-A)/dot(obj.normal,B-A);
                 
-                if(t<=eps || t>1)
+                %if(t<=eps || t>1)
+                if(t<0 || t>1) % with exclusion of prev boundary 0 is possible
                     % interaction happens outside the segment
                     return;
                 else

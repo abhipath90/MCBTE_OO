@@ -32,13 +32,21 @@ classdef Material
             obj.vel = matInput(:,2);
             obj.tau = matInput(:,3);
             obj.cvMode = matInput(:,4);
-            obj.pol = matInput(:,5);
             
-            
-            obj.tauImp = 1e10*ones(obj.Nmodes,1);          % Very large default value
-                        
-            if col==6
+            % if polarization is not defined in the material default is
+            % same for all branches 1
+            if(col>4)
+                obj.pol = matInput(:,5);
+            else
+                obj.pol = ones(size(obj.freq));
+            end
+
+            % if impurity scattering times are not defined a very large
+            % value is chosen
+            if (col>5)
                 obj.tauImp = matInput(:,6);
+            else
+                obj.tauImp = 1e10*ones(obj.Nmodes,1);          % Very large default value
             end
                
             % Calculating distributions

@@ -45,6 +45,7 @@ classdef IsoSrc
             part = Particle();  % default constructor: all nulls
             part.pSign = sign(obj.devETotal);
             part.matID = obj.matObj.matID;
+            
             part.mode = Utils.Select_mode(obj.matObj.cumulVel,obj.matObj.Nmodes);
             part.omega = obj.matObj.freq(part.mode);
             

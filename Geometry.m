@@ -73,7 +73,7 @@ classdef Geometry
             obj.numPeri = 0;
             % Finding periodic boundaries
             indexPeri = find(RawData.bndProp(:,2)==3);
-            
+            bndPairs = RawData.periPair;
             if(~isempty(indexPeri))
                 obj.numPeri = length(indexPeri);
                 for ii=1:obj.numPeri
@@ -85,14 +85,15 @@ classdef Geometry
                     point4 = thisBnd(1,10:12);
                     mat = thisBndProp(1,3);
                     transVec = (thisBndProp(1,4:6))'; % transposing for column vector
-                    obj.Peri = [obj.Peri; PeriBnd(indexPeri(ii),mat,point1,point2,point3,point4,transVec)];
+                    pairBnd = bndPairs(bndPairs(:,1) == indexPeri(ii),2);
+                    obj.Peri = [obj.Peri; PeriBnd(indexPeri(ii),mat,point1,point2,point3,point4,transVec,pairBnd)];
                 end
             end
             
             % initializing interface boundaries
             obj.Inter = [];
             obj.numInter = 0;
-            % Finding interface boundaries
+            % Finding interface boundaries in the simulation
             indexInter = find(RawData.bndProp(:,2)==5);
             
             if(~isempty(indexInter))
@@ -100,11 +101,14 @@ classdef Geometry
                 if(obj.numInter ~= RawData.interface{1})
                     error('number of interface definitions do not match');
                 end
+                % Ordered array of all the interfaces listed in interface
+                % data
                 bndArray = RawData.interface{2};
+                % Corresponding interface characteristic data filenames
                 dataPoints = RawData.interface{3};
-                cumDataPoints = cumsum(dataPoints);
-                dataArray = RawData.interface{4};
                 for ii=1:obj.numInter
+                    % Going through the list of all the boundaries in
+                    % simulation
                     thisBnd = RawData.bnd(indexInter(ii),:);
                     thisBndProp = RawData.bndProp(indexInter(ii),:);
                     point1 = thisBnd(1,1:3);
@@ -113,14 +117,11 @@ classdef Geometry
                     point4 = thisBnd(1,10:12);
                     mat = thisBndProp(1,3);
                     mat2 = thisBndProp(1,4);
-                    indexData = find(bndArray == indexInter(ii));
-                    if indexData==1
-                        startData=1;
-                    else
-                        startData = cumDataPoints(indexData-1);
-                    end
-                    endData = cumDataPoints(indexData);
-                    type = dataArray(startData:endData,:);
+                    % To find where the data for this boundary is located
+                    % in the interface data filelist
+                    indexData = bndArray == indexInter(ii);
+                    % List of files that define interface characteristics.
+                    type = dataPoints{indexData};
                     obj.Inter = [obj.Inter; InterBnd(indexInter(ii),mat,point1,point2,point3,point4,mat2,type,matObj)];
                 end
             end
