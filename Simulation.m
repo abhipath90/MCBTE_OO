@@ -18,7 +18,7 @@ progress = fopen([TestCaseFolder '/Progress' num2str(labindex) '.txt'], 'w');
 % This object only contains raw data supplied as input to the simulation.
 % Here we will add data checks later
 
-if labindex == 1
+% if labindex == 1
     % File names to be imported 
     File_mat1 = [ TestCaseFolder '/mat_data.txt']; % contains material data
     File_mat2 = [ TestCaseFolder '/mat_data2.txt'];
@@ -72,30 +72,92 @@ if labindex == 1
     % changes to their data from particle
     DetectObject = Detector(simParamObject,rawDataObject.measureReg,rawDataObject.measureTime,materialInfoObj.matProp);
     
-end
-
+    % end
+fprintf(outputMessages,['All objects are created.\n']);  
 %% Step 7 Send data to all the workers
-fprintf(outputMessages,['Sending data to all workers.\n']);  
+% fprintf(outputMessages,['Sending data to all workers.\n']);  
+% Creating object of objecct could be making issue in large run improving
+% that by sending each object one by one
 
-if labindex == 1
-    objectOfObjects = {rawDataObject;simParamObject;materialInfoObj;...
-                    geometryObject;sourceObject;DetectObject};
-    [~] = labBroadcast(1,objectOfObjects);
-else
-    objectOfObjects = labBroadcast(1);
-end
+% labBarrier;
+% % Sending rawDataObject
+% if labindex == 1
+%     fprintf(outputMessages,['Sending raw data object to all workers.\n']); 
+%     [~] = labBroadcast(1,rawDataObject);
+% else
+%     rawDataObject = labBroadcast(1);
+%     fprintf(outputMessages,['Recieved raw data object.\n']); 
+% end
 
-labBarrier;
+% labBarrier;
+% % Sending simParamObject
+% if labindex == 1
+%     fprintf(outputMessages,['Sending Sim paramter  object to all workers.\n']); 
+%     [~] = labBroadcast(1,simParamObject);
+% else
+%     simParamObject = labBroadcast(1);
+%     fprintf(outputMessages,['Recieved Sim parameter object.\n']); 
+% end
 
-fprintf(outputMessages,['Sent all data.\n']);  
+% labBarrier;
+% % Sending materialinfo object
+% if labindex == 1
+%     fprintf(outputMessages,['Sending material info to all workers.\n']); 
+%     [~] = labBroadcast(1,materialInfoObj);
+% else
+%     materialInfoObj = labBroadcast(1);
+%     fprintf(outputMessages,['Recieved material info object.\n']); 
+% end
 
-% extracting data for all the objects
-rawDataObject = objectOfObjects{1};
-simParamObject = objectOfObjects{2};
-materialInfoObj = objectOfObjects{3};
-geometryObject = objectOfObjects{4};
-sourceObject = objectOfObjects{5};
-DetectObject = objectOfObjects{6};
+% labBarrier;
+% % Sending geometryObject
+% if labindex == 1
+%     fprintf(outputMessages,['Sending geometry object to all workers.\n']); 
+%     [~] = labBroadcast(1,geometryObject);
+% else
+%     geometryObject = labBroadcast(1);
+%     fprintf(outputMessages,['Recieved geometry object.\n']); 
+% end
+
+% labBarrier;
+% % Sending source object
+% if labindex == 1
+%     fprintf(outputMessages,['Sending source object to all workers.\n']); 
+%     [~] = labBroadcast(1,sourceObject);
+% else
+%     sourceObject = labBroadcast(1);
+%     fprintf(outputMessages,['Recieved geometry object.\n']); 
+% end
+
+% labBarrier;
+% Sending detector object
+% if labindex == 1
+%     fprintf(outputMessages,['Sending detector object to all workers.\n']); 
+%     [~] = labBroadcast(1, DetectObject);
+% else
+%     DetectObject = labBroadcast(1);
+%     fprintf(outputMessages,['Recieved detector object .\n']); 
+% end
+% 
+% if labindex == 1
+%     objectOfObjects = {rawDataObject;simParamObject;materialInfoObj;...
+%                     geometryObject;sourceObject;DetectObject};
+%     [~] = labBroadcast(1,objectOfObjects);
+% else
+%     objectOfObjects = labBroadcast(1);
+% end
+
+% labBarrier;
+
+% fprintf(outputMessages,['Sent all data.\n']);  
+
+% % extracting data for all the objects
+% rawDataObject = objectOfObjects{1};
+% simParamObject = objectOfObjects{2};
+% materialInfoObj = objectOfObjects{3};
+% geometryObject = objectOfObjects{4};
+% sourceObject = objectOfObjects{5};
+% DetectObject = objectOfObjects{6};
 
 
 %% Step 8  Particle object
@@ -113,11 +175,14 @@ Step two: while it stays alive
             update properties and count relaxation events
 Step three: kill particle if it statisfies death criteria
 %}
+
+problemCount = 0;
+fprintf(outputMessages,['Starting to create particles.\n']); 
 for ii=labindex:numlabs:simParamObject.N
     %disp(ii);
     if(mod(ii*1000,simParamObject.N)==0)
         fprintf(progress,'Current %f %% \n', ii*100/simParamObject.N);
-        disp(num2str(ii*100/simParamObject.N));
+        % disp(num2str(ii*100/simParamObject.N));
         %disp(num2str(geometryObject.Inter(1).fluxAcross))
     end
     
@@ -147,8 +212,14 @@ for ii=labindex:numlabs:simParamObject.N
         end
         
         % Calculate contributions
-        DetectObject = DetectObject.Record_contributions(part,materialInfoObj.matProp);
+        [DetectObject,part,isProblem] = DetectObject.Record_contributions(part,materialInfoObj.matProp);
         
+        if(isProblem)
+            % particle is marked for deletion. Record its count. if too
+            % many are found, we will look at the in finer details
+            problemCount = problemCount + 1;
+            continue;
+        end
         % Change particle properties based on the scattering event
         
         % Choose scattering
@@ -197,6 +268,8 @@ for ii=1:geometryObject.numInter
        fprintf(outputMessages,['Problem writting flux info for bounday ID' num2str(geometryObject.Inter(ii).bndID)]);
    end
 end
+
+writematrix(problemCount,['Problem_count_' outputIdentifier '.txt']);
 
 fclose(progress);
 fclose(outputMessages);

@@ -23,20 +23,25 @@ classdef DetectorStead < Region
             obj.Qz = zeros(1,nmodes);
         end
         
-        function obj = Contribute(obj,Parti,material)
+        function [obj, Parti, isProblem] = Contribute(obj,Parti,material)
             % Contribute_tans calculates the contribution of particle to
             % this detector's temperature and flux in transient cases
             %   It will check the interaction length between particle and
             %   detector and then calculate its contribution to the
             %   detector.
-            
+            isProblem = false;
             len = obj.Len_inside(Parti.startPoint,Parti.endPoint);
             
             if(Parti.matID ~= obj.material && abs(len-0)>2*eps)
-                partProps = ['Material = ' num2str(Parti.matID) '\nStarting = ' num2str((Parti.startPoint)') ...
-                    '\nEnding = ' num2str((Parti.endPoint)') '\nvelocity = ' num2str((Parti.vel)') ' and \n omega = ' ...
-                    num2str(Parti.omega) '\n'];
-                error(['Material ID of detector and particle do not match\nParticle properties:' partProps]);
+%                 partProps = ['Material = ' num2str(Parti.matID) '\nStarting = ' num2str((Parti.startPoint)') ...
+%                     '\nEnding = ' num2str((Parti.endPoint)') '\nvelocity = ' num2str((Parti.vel)') ' and \n omega = ' ...
+%                     num2str(Parti.omega) '\n'];
+                %error(['Material ID of detector and particle do not match\nParticle properties:' partProps]);
+                
+                %Don't raise error, just kill the particle and count the
+                % problematic particles.
+                Parti.isAlive = false;
+                isProblem = true;
             end
             if(len>0)
                 speed = vecnorm(Parti.vel,2,1);

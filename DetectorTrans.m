@@ -25,13 +25,14 @@ classdef DetectorTrans < Region
             obj.Qz = zeros(1,times);
         end
         
-        function obj = Contribute(obj,Parti,material)
+        function [obj,Parti,isProblem] = Contribute(obj,Parti,material)
             % Contribute_tans calculates the contribution of particle to
             % this detector's temperature and flux in transient cases
             %   It will check if there is an interaction between particle
             %   flight and the detector at the time of interest and then
             %   calculate its contribution
             
+            isProblem = false;
             % find timeIdexes
             timeIndex = find(obj.timePoints>Parti.t0 & obj.timePoints<Parti.tNext);
             
@@ -43,9 +44,12 @@ classdef DetectorTrans < Region
                 
                 if(isInside)
                     if(Parti.matID ~= obj.material)
-                        error('Material ID of detector and particle do not match');
+                        
+                        Parti.isAlive = false;
+                        isProblem = true;
+                        %error('Material ID of detector and particle do not match');
                     end
-                    matID = Parti.matID;
+                    %matID = Parti.matID;
                     obj.Temp(1,timeIndex(ii)) = obj.Temp(1,timeIndex(ii)) + Parti.pSign*Parti.eEff/material.cvAll/obj.volume;
                     obj.Qx(1,timeIndex(ii)) = obj.Qx(1,timeIndex(ii)) + Parti.pSign*Parti.eEff*Parti.vel(1)/obj.volume;
                     obj.Qy(1,timeIndex(ii)) = obj.Qy(1,timeIndex(ii)) + Parti.pSign*Parti.eEff*Parti.vel(2)/obj.volume;

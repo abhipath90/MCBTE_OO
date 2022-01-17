@@ -36,7 +36,7 @@ classdef Detector
             
         end
         
-        function obj = Record_contributions(obj,part,matProp)
+        function [obj,part,isProblem] = Record_contributions(obj,part,matProp)
             % Record_contributions records particle contribution to proper
             % detectors
             
@@ -46,7 +46,11 @@ classdef Detector
             % here
             
             for ii=1:obj.noDetect
-                obj.detectors(ii) = obj.detectors(ii).Contribute(part,matProp(part.matID));
+                [obj.detectors(ii),part,isProblem] = obj.detectors(ii).Contribute(part,matProp(part.matID));
+                if(isProblem)
+                    % particle is chosen for deletion.
+                    break;
+                end
             end
                         
         end
